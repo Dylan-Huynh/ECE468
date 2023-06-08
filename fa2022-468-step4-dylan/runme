@@ -1,0 +1,12 @@
+#!/bin/bash
+
+USING_PYTHON=$(dirname $0)/using-python
+if [[ -f $USING_PYTHON ]]
+then
+    BUILD_DIR=$(dirname $0)/build/python
+    export PYTHONPATH=$BUILD_DIR:$PYTHONPATH
+    python3 python/main.py $1 > $2
+else
+    java -cp "$CLASSPATH:classes" compiler.Compiler $1 > $2
+fi
+

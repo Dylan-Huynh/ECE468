@@ -1,0 +1,110 @@
+diff --git a/python/MicroC.g4 b/python/MicroC.g4
+index 65bce5e..0107daa 100644
+--- a/python/MicroC.g4
++++ b/python/MicroC.g4
+@@ -16,6 +16,8 @@ from MicroCCompiler.ast.StatementListNode import StatementListNode
+ from MicroCCompiler.ast.ASTNode import ASTNode
+ from MicroCCompiler.ast.BinaryOpNode import BinaryOpNode
+ from MicroCCompiler.ast.UnaryOpNode import UnaryOpNode
++from MicroCCompiler.ast.IfStatementNode import IfStatementNode
++from MicroCCompiler.ast.WhileNode import WhileNode
+ }
+ 
+ @members {
+diff --git a/python/MicroCCompiler/assembly/instructions/InstructionBranch.py b/python/MicroCCompiler/assembly/instructions/InstructionBranch.py
+index 1f41505..5059f93 100644
+--- a/python/MicroCCompiler/assembly/instructions/InstructionBranch.py
++++ b/python/MicroCCompiler/assembly/instructions/InstructionBranch.py
+@@ -9,4 +9,4 @@ class InstructionBranch(Instruction):
+     self.label = label
+ 
+   def __str__(self):
+-    return str(self.oc) + " " + self.src1 + ", " + self.src2 + "," + self.label
++    return str(self.oc) + " " + self.src1 + ", " + self.src2 + ", " + self.label
+diff --git a/python/MicroCCompiler/assembly/instructions/__init__.py b/python/MicroCCompiler/assembly/instructions/__init__.py
+index 6eee283..7a6a47e 100644
+--- a/python/MicroCCompiler/assembly/instructions/__init__.py
++++ b/python/MicroCCompiler/assembly/instructions/__init__.py
+@@ -1,4 +1,10 @@
+ from .Add import Add
++from .Beq import Beq
++from .Bge import Bge
++from .Bgt import Bgt
++from .Ble import Ble
++from .Blt import Blt
++from .Bne import Bne
+ from .Div import Div
+ from .FAdd import FAdd
+ from .FDiv import FDiv
+@@ -8,6 +14,10 @@ from .FMul import FMul
+ from .FMv import FMv
+ from .FNeg import FNeg
+ from .FSub import FSub
++from .Feq import Feq
++from .Fle import Fle
++from .Flt import Flt
++from .Flw import Flw
+ from .Fsw import Fsw
+ from .GetF import GetF
+ from .GetI import GetI
+@@ -16,7 +26,10 @@ from .Instruction3O import Instruction3O
+ from .InstructionLS import InstructionLS
+ from .InstructionPut import InstructionPut
+ from .Instruction import Instruction
++from .InstructionBranch import InstructionBranch
++from .J import J
+ from .La import La
++from .Label import Label
+ from .Li import Li
+ from .Lw import Lw
+ from .Mul import Mul
+diff --git a/python/MicroCCompiler/ast/CondNode.py b/python/MicroCCompiler/ast/CondNode.py
+index 5c44d62..0166ff7 100644
+--- a/python/MicroCCompiler/ast/CondNode.py
++++ b/python/MicroCCompiler/ast/CondNode.py
+@@ -36,7 +36,7 @@ class CondNode(ASTNode):
+     self.setOp(op)
+ 
+   def accept(self, visitor: 'ASTVisitor') -> Any:
+-    return visitor.visitCondOpNode(self)
++    return visitor.visitCondNode(self)
+ 
+   def getLeft(self) -> ASTNode:
+     return self.left
+@@ -47,8 +47,8 @@ class CondNode(ASTNode):
+   def getRight(self) -> ASTNode:
+     return self.right
+ 
+-  def setLeft(self, right: ASTNode):
+-    self.left = right  
++  def setRight(self, right: ASTNode):
++    self.right = right  
+ 
+   def getOp(self) -> self.OpType:
+     return self.oc
+diff --git a/python/MicroCCompiler/ast/IfStatementNode.py b/python/MicroCCompiler/ast/IfStatementNode.py
+index b9e5182..5a7521f 100644
+--- a/python/MicroCCompiler/ast/IfStatementNode.py
++++ b/python/MicroCCompiler/ast/IfStatementNode.py
+@@ -15,7 +15,7 @@ class IfStatementNode(ASTNode):
+   def accept(self, visitor: 'ASTVisitor'):
+     return visitor.visitIfStatementNode(self)
+ 
+-  def getCondExpr(self) -> CondNode:
++  def getCond(self) -> CondNode:
+     return self.condExpr
+ 
+   def setCondExpr(self, condExpr: CondNode):
+diff --git a/python/MicroCCompiler/ast/visitor/AbstractASTVisitor.py b/python/MicroCCompiler/ast/visitor/AbstractASTVisitor.py
+index 5a6c084..e18b68a 100644
+--- a/python/MicroCCompiler/ast/visitor/AbstractASTVisitor.py
++++ b/python/MicroCCompiler/ast/visitor/AbstractASTVisitor.py
+@@ -64,7 +64,7 @@ class AbstractASTVisitor(ASTVisitor):
+ 
+     def visitWhileNode(self, node: 'WhileNode') -> Any:
+         self.preprocessWhileNode(node)
+-        cond = node.getCondExpr().accept(self)
++        cond = node.getCond().accept(self)
+         slist = node.getSlist().accept(self)
+         return self.postprocessWhileNode(node, cond, slist)
+ 
